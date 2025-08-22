@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS Web Interface</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #2c3e50 0%, #1a1a2e 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .macos-desktop {
+            width: 95%;
+            max-width: 1400px;
+            height: 90vh;
+            background: url('https://images.unsplash.com/photo-1531297484001-80022131f5a1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1400&q=80') no-repeat center center;
+            background-size: cover;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6), 0 18px 36px -18px rgba(0, 0, 0, 0.7);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Menu Bar */
+        .menu-bar {
+            background: rgba(60, 60, 67, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            height: 28px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.85);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .apple-logo {
+            margin-right: 25px;
+            font-size: 16px;
+        }
+        
+        .menu-item {
+            margin-right: 20px;
+            cursor: pointer;
+            padding: 2px 5px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .menu-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+        }
+        
+        .menu-right i {
+            margin-left: 15px;
+            font-size: 14px;
+        }
+        
+        /* Dock */
+        .dock {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 16px;
+            padding: 8px 6px;
+            display: flex;
+            align-items: flex-end;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .dock-icon {
+            width: 50px;
+            height: 50px;
+            margin: 0 6px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            font-size: 22px;
+            color: #444;
+        }
+        
+        .dock-icon:hover {
+            transform: scale(1.4);
+            margin: 0 12px;
+        }
+        
+        .dock-separator {
+            width: 1px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.3);
+            margin: 0 8px;
+        }
+        
+        /* Windows */
+        .window {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+        
+        .window-header {
+            background: rgba(240, 240, 240, 0.95);
+            height: 38px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            justify-content: space-between;
+            border-bottom: 1px solid #e1e1e1;
+            cursor: move;
+        }
+        
+        .window-controls {
+            display: flex;
+        }
+        
+        .control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        
+        .close { background: #ff5f57; }
+        .minimize { background: #ffbd2e; }
+        .maximize { background: #28c940; }
+        
+        .window-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .window-body {
+            padding: 20px;
+            flex: 1;
+            overflow: auto;
+        }
+        
+        /* Minimized state */
+        .minimized {
+            display: none !important;
+        }
+        
+        /* Maximized state */
+        .maximized {
+            width: 100% !important;
+            height: 100% !important;
+            top: 0 !important;
+            left: 0 !important;
+            border-radius: 0 !important;
+            transition: all 0.3s ease;
+        }
+        
+        /* Calculator */
+        #calculator-window {
+            width: 300px;
+            height: 420px;
+            top: 100px;
+            left: 150px;
+        }
+        
+        .calculator {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-gap: 10px;
+        }
+        
+        .calculator-display {
+            grid-column: span 4;
+            height: 60px;
+            background: #f1f2f6;
+            border-radius: 8px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 0 15px;
+            font-size: 28px;
+            font-weight: 300;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        
+        .calc-btn {
+            height: 50px;
+            border-radius: 8px;
+            border: none;
+            background: #f1f2f6;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .calc-btn:hover {
+            background: #dcdde1;
+        }
+        
+        .operator {
+            background: #fbc531;
+            color: white;
+        }
+        
+        .operator:hover {
+            background: #e1b12c;
+        }
+        
+        .equals {
+            background: #44bd32;
+            color: white;
+        }
+        
+        .equals:hover {
+            background: #3ea62d;
+        }
+        
+        /* File Explorer */
+        #finder-window {
+            width: 700px;
+            height: 450px;
+            top: 80px;
+            left: 500px;
+        }
+        
+        .finder-sidebar {
+            width: 180px;
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+            padding: 15px 0;
+            height: 100%;
+            float: left;
+        }
+        
+        .finder-content {
+            margin-left: 180px;
+            padding: 15px;
+            height: 100%;
+            overflow: auto;
+        }
+        
+        .sidebar-item {
+            padding: 8px 15px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: #495057;
+        }
+        
+        .sidebar-item i {
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        
+        .sidebar-item:hover {
+            background: #e9ecef;
+        }
+        
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+        }
+        
+        .file-item {
+            text-align: center;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        
+        .file-item:hover {
+            background: #e9ecef;
+        }
+        
+        .file-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 8px;
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            color: white;
+        }
+        
+        .dmg-file .file-icon {
+            background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+        }
+        
+        .file-name {
+            font-size: 12px;
+            word-break: break-word;
+        }
+        
+        /* YouTube Window */
+        #youtube-window {
+            width: 800px;
+            height: 500px;
+            top: 100px;
+            left: 300px;
+        }
+        
+        .youtube-header {
+            background: #ff0000;
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .youtube-search {
+            display: flex;
+            width: 60%;
+        }
+        
+        .youtube-search input {
+            flex: 1;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+        }
+        
+        .youtube-search button {
+            background: #f1f1f1;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+        
+        .youtube-content {
+            display: flex;
+            height: calc(100% - 52px);
+        }
+        
+        .youtube-sidebar {
+            width: 200px;
+            background: #f9f9f9;
+            padding: 15px 0;
+            border-right: 1px solid #e5e5e5;
+            overflow-y: auto;
+        }
+        
+        .youtube-main {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f9f9f9;
+        }
+        
+        .video-container {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .video-thumbnail {
+            height: 180px;
+            background: linear-gradient(45deg, #ff0000, #ff5e5e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 20px;
+        }
+        
+        .video-info {
+            padding: 12px;
+        }
+        
+        .video-title {
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .channel-info {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        
+        .channel-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff0000, #ff5e5e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            margin-right: 10px;
+        }
+        
+        .channel-link {
+            cursor: pointer;
+            color: #065fd4;
+            text-decoration: none;
+        }
+        
+        .channel-link:hover {
+            text-decoration: underline;
+        }
+        
+        /* Active Window */
+        .active-window {
+            display: flex;
+            z-index: 10;
+        }
+        
+        /* Desktop Icons */
+        .desktop-icons {
+            position: absolute;
+            top: 40px;
+            left: 20px;
+        }
+        
+        .desktop-icon {
+            width: 80px;
+            margin-bottom: 20px;
+            text-align: center;
+            cursor: pointer;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+        
+        .desktop-icon-image {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 5px;
+            background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+        }
+        
+        .youtube-icon .desktop-icon-image {
+            background: linear-gradient(135deg, #ff0000 0%, #ff5e5e 100%);
+        }
+        
+        /* DMG Window */
+        #dmg-window {
+            width: 500px;
+            height: 300px;
+            top: 200px;
+            left: 400px;
+        }
+        
+        .dmg-content {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .dmg-content i {
+            font-size: 64px;
+            color: #e84393;
+            margin-bottom: 20px;
+        }
+        
+        .dmg-content h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .dmg-content p {
+            margin-bottom: 30px;
+            color: #666;
+        }
+        
+        .install-btn {
+            background: #44bd32;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .install-btn:hover {
+            background: #3ea62d;
+        }
+    </style>
+</head>
+<body>
+    <div class="macos-desktop">
+        <div class="menu-bar">
+            <div class="apple-logo">􀣺</div>
+            <div class="menu-item">Finder</div>
+            <div class="menu-item">File</div>
+            <div class="menu-item">Edit</div>
+            <div class="menu-item">View</div>
+            <div class="menu-item">Go</div>
+            <div class="menu-item">Window</div>
+            <div class="menu-item">Help</div>
+            
+            <div class="menu-right">
+                <i class="far fa-bell"></i>
+                <i class="far fa-clock"></i>
+                <i class="fas fa-wifi"></i>
+                <i class="fas fa-battery-three-quarters"></i>
+                <span>Sat Oct 7</span>
+            </div>
+        </div>
+        
+        <div class="desktop-icons">
+            <div class="desktop-icon" onclick="openWindow('finder-window')">
+                <div class="desktop-icon-image">
+                    <i class="fas fa-folder"></i>
+                </div>
+                <div class="desktop-icon-name">Macintosh HD</div>
+            </div>
+            
+            <div class="desktop-icon" onclick="openWindow('calculator-window')">
+                <div class="desktop-icon-image">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <div class="desktop-icon-name">Calculator</div>
+            </div>
+            
+            <div class="desktop-icon youtube-icon" onclick="openWindow('youtube-window')">
+                <div class="desktop-icon-image">
+                    <i class="fab fa-youtube"></i>
+                </div>
+                <div class="desktop-icon-name">YouTube</div>
+            </div>
+        </div>
+        
+        <!-- Calculator Window -->
+        <div id="calculator-window" class="window">
+            <div class="window-header">
+                <div class="window-controls">
+                    <div class="control close" onclick="closeWindow('calculator-window')"></div>
+                    <div class="control minimize" onclick="minimizeWindow('calculator-window')"></div>
+                    <div class="control maximize" onclick="maximizeWindow('calculator-window')"></div>
+                </div>
+                <div class="window-title">Calculator</div>
+                <div></div>
+            </div>
+            <div class="window-body">
+                <div class="calculator">
+                    <div class="calculator-display" id="calc-display">0</div>
+                    <button class="calc-btn operator" onclick="clearDisplay()">C</button>
+                    <button class="calc-btn operator" onclick="toggleSign()">±</button>
+                    <button class="calc-btn operator" onclick="appendPercent()">%</button>
+                    <button class="calc-btn operator" onclick="setOperation('/')">÷</button>
+                    
+                    <button class="calc-btn" onclick="appendNumber('7')">7</button>
+                    <button class="calc-btn" onclick="appendNumber('8')">8</button>
+                    <button class="calc-btn" onclick="appendNumber('9')">9</button>
+                    <button class="calc-btn operator" onclick="setOperation('*')">×</button>
+                    
+                    <button class="calc-btn" onclick="appendNumber('4')">4</button>
+                    <button class="calc-btn" onclick="appendNumber('5')">5</button>
+                    <button class="calc-btn" onclick="appendNumber('6')">6</button>
+                    <button class="calc-btn operator" onclick="setOperation('-')">−</button>
+                    
+                    <button class="calc-btn" onclick="appendNumber('1')">1</button>
+                    <button class="calc-btn" onclick="appendNumber('2')">2</button>
+                    <button class="calc-btn" onclick="appendNumber('3')">3</button>
+                    <button class="calc-btn operator" onclick="setOperation('+')">+</button>
+                    
+                    <button class="calc-btn" onclick="appendNumber('0')" style="grid-column: span 2;">0</button>
+                    <button class="calc-btn" onclick="appendDecimal()">.</button>
+                    <button class="calc-btn equals" onclick="calculate()">=</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Finder Window -->
+        <div id="finder-window" class="window">
+            <div class="window-header">
+                <div class="window-controls">
+                    <div class="control close" onclick="closeWindow('finder-window')"></div>
+                    <div class="control minimize" onclick="minimizeWindow('finder-window')"></div>
+                    <div class="control maximize" onclick="maximizeWindow('finder-window')"></div>
+                </div>
+                <div class="window-title">Finder - Documents</div>
+                <div></div>
+            </div>
+            <div class="window-body" style="padding: 0; display: flex;">
+                <div class="finder-sidebar">
+                    <div class="sidebar-item" style="background: #e9ecef;">
+                        <i class="fas fa-house"></i> Home
+                    </div>
+                    <div class="sidebar-item">
+                        <i class="fas fa-desktop"></i> Desktop
+                    </div>
+                    <div class="sidebar-item">
+                        <i class="fas fa-download"></i> Downloads
+                    </div>
+                    <div class="sidebar-item">
+                        <i class="fas fa-document"></i> Documents
+                    </div>
+                    <div class="sidebar-item">
+                        <i class="fas fa-images"></i> Pictures
+                    </div>
+                    <div class="sidebar-item">
+                        <i class="fas fa-music"></i> Music
+                    </div>
+                    <div class="sidebar-item">
+                        <i class="fas fa-film"></i> Movies
+                    </div>
+                    <div class="sidebar-item">
+                        <i class="fas fa-hdd"></i> Applications
+                    </div>
+                </div>
+                <div class="finder-content">
+                    <h2 style="margin-bottom: 20px;">Documents</h2>
+                    <div class="files-grid">
+                        <div class="file-item dmg-file" onclick="openWindow('dmg-window')">
+                            <div class="file-icon">
+                                <i class="fas fa-cube"></i>
+                            </div>
+                            <div class="file-name">AppInstaller.dmg</div>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-icon">
+                                <i class="fas fa-file-pdf"></i>
+                            </div>
+                            <div class="file-name">Report.pdf</div>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-icon">
+                                <i class="fas fa-file-word"></i>
+                            </div>
+                            <div class="file-name">Document.docx</div>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-icon">
+                                <i class="fas fa-file-excel"></i>
+                            </div>
+                            <div class="file-name">Spreadsheet.xlsx</div>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-icon">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <div class="file-name">Projects</div>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-icon">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <div class="file-name">Images</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- YouTube Window -->
+        <div id="youtube-window" class="window">
+            <div class="window-header" id="youtube-header">
+                <div class="window-controls">
+                    <div class="control close" onclick="closeWindow('youtube-window')"></div>
+                    <div class="control minimize" onclick="minimizeWindow('youtube-window')"></div>
+                    <div class="control maximize" onclick="maximizeWindow('youtube-window')"></div>
+                </div>
+                <div class="window-title">YouTube</div>
+                <div></div>
+            </div>
+            <div class="window-body" style="padding: 0;">
+                <div class="youtube-header">
+                    <div style="display: flex; align-items: center;">
+                        <i class="fab fa-youtube" style="font-size: 24px; margin-right: 15px;"></i>
+                        <h2>YouTube</h2>
+                    </div>
+                    <div class="youtube-search">
+                        <input type="text" placeholder="Search YouTube">
+                        <button><i class="fas fa-search"></i></button>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <i class="fas fa-video" style="margin-right: 15px; cursor: pointer;"></i>
+                        <i class="fas fa-bell" style="margin-right: 15px; cursor: pointer;"></i>
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #ff5e5e; cursor: pointer;"></div>
+                    </div>
+                </div>
+                <div class="youtube-content">
+                    <div class="youtube-sidebar">
+                        <div class="sidebar-item" style="background: #e9ecef;">
+                            <i class="fas fa-home"></i> Home
+                        </div>
+                        <div class="sidebar-item">
+                            <i class="fas fa-fire"></i> Trending
+                        </div>
+                        <div class="sidebar-item">
+                            <i class="fas fa-play-circle"></i> Subscriptions
+                        </div>
+                        <div class="sidebar-item">
+                            <i class="fas fa-film"></i> Library
+                        </div>
+                        <div class="sidebar-item">
+                            <i class="fas fa-history"></i> History
+                        </div>
+                        <div class="sidebar-item">
+                            <i class="fas fa-clock"></i> Watch later
+                        </div>
+                        <div class="sidebar-item">
+                            <i class="fas fa-thumbs-up"></i> Liked videos
+                        </div>
+                        <hr style="margin: 10px 0; border-color: #eee;">
+                        <div class="sidebar-item">
+                            <i class="fab fa-youtube" style="color: #ff0000;"></i> <span class="channel-link" onclick="openYouTubeChannel()">Memer_bisht07</span>
+                        </div>
+                        <div class="sidebar-item">
+                            <i class="fab fa-youtube" style="color: #ff0000;"></i> Tech Reviews
+                        </div>
+                        <div class="sidebar-item">
+                            <i class="fab fa-youtube" style="color: #ff0000;"></i> Music Channel
+                        </div>
+                    </div>
+                    <div class="youtube-main">
+                        <h3 style="margin-bottom: 15px;">Memer_bisht07 Channel</h3>
+                        <div class="video-container">
+                            <div class="video-thumbnail">
+                                <i class="fas fa-play-circle" style="font-size: 48px;"></i>
+                            </div>
+                            <div class="video-info">
+                                <div class="video-title">Funny Memes Compilation 2023 | Part 1</div>
+                                <div style="color: #606060; font-size: 14px;">1.2M views • 2 weeks ago</div>
+                                <div class="channel-info">
+                                    <div class="channel-icon">M</div>
+                                    <div class="channel-link" onclick="openYouTubeChannel()">Memer_bisht07</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="video-container">
+                            <div class="video-thumbnail">
+                                <i class="fas fa-play-circle" style="font-size: 48px;"></i>
+                            </div>
+                            <div class="video-info">
+                                <div class="video-title">Top 10 Viral Memes of the Month</div>
+                                <div style="color: #606060; font-size: 14px;">850K views • 3 weeks ago</div>
+                                <div class="channel-info">
+                                    <div class="channel-icon">M</div>
+                                    <div class="channel-link" onclick="openYouTubeChannel()">Memer_bisht07</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="video-container">
+                            <div class="video-thumbnail">
+                                <i class="fas fa-play-circle" style="font-size: 48px;"></i>
+                            </div>
+                            <div class="video-info">
+                                <div class="video-title">How to Create Memes - Tutorial</div>
+                                <div style="color: #606060; font-size: 14px;">500K views • 1 month ago</div>
+                                <div class="channel-info">
+                                    <div class="channel-icon">M</div>
+                                    <div class="channel-link" onclick="openYouTubeChannel()">Memer_bisht07</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- DMG Window -->
+        <div id="dmg-window" class="window">
+            <div class="window-header">
+                <div class="window-controls">
+                    <div class="control close" onclick="closeWindow('dmg-window')"></div>
+                    <div class="control minimize" onclick="minimizeWindow('dmg-window')"></div>
+                    <div class="control maximize" onclick="maximizeWindow('dmg-window')"></div>
+                </div>
+                <div class="window-title">AppInstaller.dmg</div>
+                <div></div>
+            </div>
+            <div class="window-body">
+                <div class="dmg-content">
+                    <i class="fas fa-cube"></i>
+                    <h2>Application Installer</h2>
+                    <p>This disk image contains an application that will be installed on your computer.</p>
+                    <button class="install-btn" onclick="installApp()">Install Application</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dock -->
+        <div class="dock">
+            <div class="dock-icon" onclick="openWindow('finder-window')">
+                <i class="fas fa-folder"></i>
+            </div>
+            <div class="dock-icon" onclick="openWindow('calculator-window')">
+                <i class="fas fa-calculator"></i>
+            </div>
+            <div class="dock-icon" onclick="openWindow('youtube-window')">
+                <i class="fab fa-youtube" style="color: #ff0000;"></i>
+            </div>
+            <div class="dock-icon">
+                <i class="fas fa-music"></i>
+            </div>
+            <div class="dock-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <div class="dock-icon">
+                <i class="fas fa-photo-video"></i>
+            </div>
+            <div class="dock-icon">
+                <i class="fas fa-cog"></i>
+            </div>
+            
+            <div class="dock-separator"></div>
+            
+            <div class="dock-icon">
+                <i class="fas fa-store"></i>
+            </div>
+            <div class="dock-icon">
+                <i class="fas fa-trash"></i>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Calculator functionality - FIXED
+        let currentInput = '0';
+        let previousInput = '';
+        let operation = null;
+        let shouldResetScreen = false;
+        
+        function updateDisplay() {
+            const display = document.getElementById('calc-display');
+            // Format the number to avoid too long decimals
+            let displayValue = currentInput;
+            if (displayValue.includes('.')) {
+                const parts = displayValue.split('.');
+                if (parts[1].length > 5) {
+                    displayValue = parseFloat(currentInput).toFixed(5);
+                }
+            }
+            display.textContent = displayValue;
+        }
+        
+        function appendNumber(number) {
+            if (currentInput === '0' || shouldResetScreen) {
+                currentInput = number;
+                shouldResetScreen = false;
+            } else {
+                currentInput += number;
+            }
+            updateDisplay();
+        }
+        
+        function appendDecimal() {
+            if (shouldResetScreen) {
+                currentInput = '0.';
+                shouldResetScreen = false;
+            } else if (!currentInput.includes('.')) {
+                currentInput += '.';
+            }
+            updateDisplay();
+        }
+        
+        function clearDisplay() {
+            currentInput = '0';
+            previousInput = '';
+            operation = null;
+            updateDisplay();
+        }
+        
+        function toggleSign() {
+            currentInput = (parseFloat(currentInput) * -1).toString();
+            updateDisplay();
+        }
+        
+        function appendPercent() {
+            currentInput = (parseFloat(currentInput) / 100).toString();
+            updateDisplay();
+        }
+        
+        function setOperation(op) {
+            if (operation !== null) calculate();
+            previousInput = currentInput;
+            operation = op;
+            shouldResetScreen = true;
+        }
+        
+        function calculate() {
+            let computation;
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+            
+            if (isNaN(prev) || isNaN(current)) return;
+            
+            switch (operation) {
+                case '+':
+                    computation = prev + current;
+                    break;
+                case '-':
+                    computation = prev - current;
+                    break;
+                case '*':
+                    computation = prev * current;
+                    break;
+                case '/':
+                    if (current === 0) {
+                        alert("Cannot divide by zero");
+                        clearDisplay();
+                        return;
+                    }
+                    computation = prev / current;
+                    break;
+                default:
+                    return;
+            }
+            
+            currentInput = computation.toString();
+            operation = null;
+            previousInput = '';
+            updateDisplay();
+        }
+        
+        // Window management
+        function openWindow(windowId) {
+            // Close all windows first
+            document.querySelectorAll('.window').forEach(window => {
+                window.classList.remove('active-window');
+                window.classList.remove('minimized');
+            });
+            
+            // Open the requested window
+            const window = document.getElementById(windowId);
+            window.classList.add('active-window');
+        }
+        
+        function closeWindow(windowId) {
+            const window = document.getElementById(windowId);
+            window.classList.remove('active-window');
+        }
+        
+        function minimizeWindow(windowId) {
+            const window = document.getElementById(windowId);
+            window.classList.add('minimized');
+        }
+        
+        function maximizeWindow(windowId) {
+            const window = document.getElementById(windowId);
+            window.classList.toggle('maximized');
+            
+            // Update maximize button based on state
+            const maximizeBtn = window.querySelector('.maximize');
+            if (window.classList.contains('maximized')) {
+                maximizeBtn.style.background = '#28c940';
+            } else {
+                maximizeBtn.style.background = '#28c940';
+            }
+        }
+        
+        // DMG functionality
+        function installApp() {
+            alert('Application installed successfully!');
+            closeWindow('dmg-window');
+        }
+        
+        // YouTube channel functionality
+        function openYouTubeChannel() {
+            window.open('https://www.youtube.com/@Memer_bisht07', '_blank');
+        }
+        
+        // Initialize calculator
+        updateDisplay();
+        
+        // Drag and drop functionality for windows
+        let isDragging = false;
+        let currentWindow = null;
+        let offsetX, offsetY;
+        
+        document.querySelectorAll('.window-header').forEach(header => {
+            header.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                currentWindow = header.parentElement;
+                offsetX = e.clientX - currentWindow.getBoundingClientRect().left;
+                offsetY = e.clientY - currentWindow.getBoundingClientRect().top;
+                
+                // Bring window to front
+                document.querySelectorAll('.window').forEach(w => {
+                    w.style.zIndex = '10';
+                });
+                currentWindow.style.zIndex = '100';
+            });
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging && currentWindow && !currentWindow.classList.contains('maximized')) {
+                currentWindow.style.left = (e.clientX - offsetX) + 'px';
+                currentWindow.style.top = (e.clientY - offsetY) + 'px';
+            }
+        });
+        
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            currentWindow = null;
+        });
+        
+        // Open Finder by default
+        window.onload = function() {
+            openWindow('finder-window');
+        };
+    </script>
+</body>
+</html>
